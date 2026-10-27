@@ -42,7 +42,7 @@ alongside the existing session information.
 
 Built and typechecked against OpenCode **2.1.4**. Uses the supported V2 server,
 custom RPC, and TUI plugin APIs; it does not support OpenCode V1.
-Release **0.2.2** is also startup-tested with OpenCode **2.2.0**. Its precompiled
+Release **0.2.3** is also startup-tested with OpenCode **2.2.0**. Its precompiled
 TUI uses the host's Solid/OpenTUI runtime so initial model hydration triggers a
 usage fetch without waiting for a model turn or the polling interval.
 
@@ -53,7 +53,7 @@ than replacing existing information or mutating OpenCode's internal layout.
 
 ## Install from GitHub
 
-Version **0.2.2** is available directly from this public GitHub repository; no
+Version **0.2.3** is available directly from this public GitHub repository; no
 npm publication or manual clone is required. Merge this entry into your existing
 `plugins` array in `~/.config/opencode/opencode.json(c)` (or the project
 configuration for project-only scope):
@@ -62,7 +62,7 @@ configuration for project-only scope):
 {
   "$schema": "https://opencode.ai/config.json",
   "plugins": [
-    "github:marcus-jan/opencode-copilot-usage#v0.2.2",
+    "github:marcus-jan/opencode-copilot-usage#v0.2.3",
   ],
 }
 ```
@@ -73,7 +73,7 @@ entry for this plugin rather than adding a second copy. **Do not add a duplicate
 entry to `cli.json`.** GitHub installation requires no GitHub sign-in; accessing
 your quota still requires the normal Copilot connection in OpenCode.
 
-The `v0.2.2` tag selects this release. To upgrade later, change it to a newer
+The `v0.2.3` tag selects this release. To upgrade later, change it to a newer
 release tag. For a strict immutable pin, use a full Git commit hash instead.
 You can also use `#latest` to follow the latest release; run
 `opencode plugin update 'github:marcus-jan/opencode-copilot-usage#latest'`
@@ -88,7 +88,7 @@ No credentials or account state are written by this plugin.
 
 ### Local development installation
 
-Clone this repository, run `bun install --frozen-lockfile`, then `bun run build`
+Clone this repository, run `bun install --frozen-lockfile`, then `bun run build:tui`
 inside it. Use the checkout's absolute directory path instead of the GitHub target:
 
 ```jsonc
@@ -112,7 +112,7 @@ All options are optional. This example shows the defaults:
   "$schema": "https://opencode.ai/config.json",
   "plugins": [
     {
-      "package": "github:marcus-jan/opencode-copilot-usage#v0.2.2",
+      "package": "github:marcus-jan/opencode-copilot-usage#v0.2.3",
       "options": {
         "refreshSeconds": 60,
         "colors": { "mode": "theme", "warningAt": 75, "criticalAt": 90 },
@@ -222,6 +222,8 @@ An isolated installed-package test starts setup without a Solid owner or selecte
 model, then hydrates the host model and checks immediate usage rendering and
 effect disposal. `bun run check` rebuilds the committed `dist/tui.js`; include
 that artifact in releases so GitHub installs do not need a build step.
+Keep the build command named `build:tui`: npm treats a script named `build` as a
+Git-dependency preparation trigger, which can fail in embedded installers.
 
 Tests use synthetic credentials and mocked GitHub responses. No live Copilot
 request or live OpenCode configuration change is made by the test suite.

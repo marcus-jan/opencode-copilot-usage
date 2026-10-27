@@ -3,6 +3,14 @@ import { copyFile, mkdir, mkdtemp, readFile, rm, symlink, writeFile } from "node
 import { tmpdir } from "node:os"
 import { dirname, join, resolve } from "node:path"
 
+test("GitHub installs do not trigger npm Git-dependency preparation", async () => {
+  const manifest = JSON.parse(await readFile("package.json", "utf8"))
+  expect(manifest.workspaces).toBeUndefined()
+  for (const script of ["build", "prepare", "prepack", "preinstall", "install", "postinstall"]) {
+    expect(manifest.scripts[script]).toBeUndefined()
+  }
+})
+
 test("installed TUI fetches after model hydration without a turn or poll", async () => {
   const directory = await mkdtemp(join(tmpdir(), "copilot-packaged-startup-"))
   try {
