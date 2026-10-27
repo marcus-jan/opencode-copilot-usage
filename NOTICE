@@ -1,0 +1,10 @@
+Copilot quota endpoint integration and field-selection behavior adapt the approach in:
+https://github.com/murtuzaalisurti/opencode-github-copilot-usage
+
+Upstream author: Murtuzaali Surti
+Upstream license: MIT
+Copyright (c) 2026 Murtuzaali Surti
+
+This is a separate OpenCode V2 plugin with additive sidebar and home-footer UI,
+server-side credential resolution, a custom RPC, and an in-memory usage cache.
+It is not affiliated with GitHub, OpenCode, or the upstream project.
