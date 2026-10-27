@@ -50,7 +50,7 @@ than replacing existing information or mutating OpenCode's internal layout.
 
 ## Install from GitHub
 
-Version **0.2.0** is available directly from this public GitHub repository; no
+Version **0.2.1** is available directly from this public GitHub repository; no
 npm publication or manual clone is required. Merge this entry into your existing
 `plugins` array in `~/.config/opencode/opencode.json(c)` (or the project
 configuration for project-only scope):
@@ -59,7 +59,7 @@ configuration for project-only scope):
 {
   "$schema": "https://opencode.ai/config.json",
   "plugins": [
-    "github:marcus-jan/opencode-copilot-usage#v0.2.0",
+    "github:marcus-jan/opencode-copilot-usage#v0.2.1",
   ],
 }
 ```
@@ -70,8 +70,11 @@ entry for this plugin rather than adding a second copy. **Do not add a duplicate
 entry to `cli.json`.** GitHub installation requires no GitHub sign-in; accessing
 your quota still requires the normal Copilot connection in OpenCode.
 
-The `v0.2.0` tag selects this release. To upgrade later, change it to a newer
+The `v0.2.1` tag selects this release. To upgrade later, change it to a newer
 release tag. For a strict immutable pin, use a full Git commit hash instead.
+You can also use `#latest` to follow the latest release; run
+`opencode plugin update 'github:marcus-jan/opencode-copilot-usage#latest'`
+to install a newly published release when that tag moves.
 
 Configuration changes are watched. Use `/reload` if you need to force a reload;
 no service restart is needed. Select a Copilot model to see the quota. Sign in
@@ -106,7 +109,7 @@ All options are optional. This example shows the defaults:
   "$schema": "https://opencode.ai/config.json",
   "plugins": [
     {
-      "package": "github:marcus-jan/opencode-copilot-usage#v0.2.0",
+      "package": "github:marcus-jan/opencode-copilot-usage#v0.2.1",
       "options": {
         "refreshSeconds": 60,
         "colors": { "mode": "theme", "warningAt": 75, "criticalAt": 90 },
@@ -214,12 +217,6 @@ and assert actual foreground colors across a live dark/light theme change.
 
 Tests use synthetic credentials and mocked GitHub responses. No live Copilot
 request or live OpenCode configuration change is made by the test suite.
-
-## Implementation plan
-
-See [ROADMAP.md](ROADMAP.md) for the implemented theme/display design and its
-verification checklist. Interactive smoke testing inside OpenCode remains a
-separate check from the automated headless tests.
 
 ## References and attribution
 

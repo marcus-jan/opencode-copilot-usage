@@ -1,7 +1,7 @@
 /** @jsxImportSource @opentui/solid */
 import { expect, test } from "bun:test"
 import type { Plugin } from "@opencode/plugin/tui"
-import { testRender } from "@opentui/solid"
+import { testRender, useRenderer } from "@opentui/solid"
 import { createRoot, createSignal } from "solid-js"
 import plugin from "../src/tui"
 import { parseUsage } from "../src/usage"
@@ -32,26 +32,28 @@ test("real TUI rendering is additive, reacts to providers, and creates a separat
       slot: (claim: Claim) => { claims.push(claim); return () => {} },
     },
   } as unknown as Context
-  const cleanup = createRoot((dispose) => {
-    disposeRoot = dispose
-    return plugin.setup(context)
-  })
-  if (typeof cleanup !== "function") throw new Error("Expected synchronous cleanup")
-  const home = claims.find((claim) => "prepend" in claim && claim.prepend === "home.footer")!
-  const sidebar = claims.find((claim) => "append" in claim && claim.append === "sidebar.content")!
-  expect(home).toBeDefined()
-  expect(sidebar).toBeDefined()
-  expect(claims.every((claim) => !("replace" in claim))).toBe(true)
-  expect(claims).toHaveLength(2)
-
-  const view = await testRender(() => (
-    <box flexDirection="column">
+  let cleanup!: () => void
+  const view = await testRender(() => {
+    Object.assign(context, { renderer: useRenderer() })
+    const result = createRoot((dispose) => {
+      disposeRoot = dispose
+      return plugin.setup(context)
+    })
+    if (typeof result !== "function") throw new Error("Expected synchronous cleanup")
+    cleanup = result
+    const home = claims.find((claim) => "prepend" in claim && claim.prepend === "home.footer")!
+    const sidebar = claims.find((claim) => "append" in claim && claim.append === "sidebar.content")!
+    expect(home).toBeDefined()
+    expect(sidebar).toBeDefined()
+    expect(claims.every((claim) => !("replace" in claim))).toBe(true)
+    expect(claims).toHaveLength(2)
+    return <box flexDirection="column">
       <text>branch: main</text>
       {home.render({} as never)}
       <text>MCP healthy · version</text>
       {sidebar.render({} as never)}
     </box>
-  ), { width: 100, height: 15 })
+  }, { width: 100, height: 15 })
   try {
     await view.renderOnce()
     expect(view.captureCharFrame()).not.toContain("Copilot")

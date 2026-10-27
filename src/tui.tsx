@@ -1,6 +1,5 @@
 /** @jsxImportSource @opentui/solid */
 import { Plugin } from "@opencode/plugin/tui"
-import { useTerminalDimensions } from "@opentui/solid"
 import { createEffect, createSignal, For, Show } from "solid-js"
 import { CopilotUsage } from "./rpc"
 import { enabled, normalizeOptions } from "./options"
@@ -14,6 +13,11 @@ export default Plugin.define({
     const [usage, setUsage] = createSignal<Usage>()
     const active = () => isCopilot(context.ui.model.current()?.providerID)
     const options = normalizeOptions(context.options)
+    // Packaged slots need not share OpenTUI's ambient RendererContext. Use the
+    // renderer supplied by the plugin host instead of renderer-context hooks.
+    const [dimensions, setDimensions] = createSignal({ width: context.renderer.width, height: context.renderer.height })
+    const resize = (width: number, height: number) => setDimensions({ width, height })
+    context.renderer.on("resize", resize)
     const automatic = () => active() && (enabled(options.display.sidebar) || enabled(options.display.home))
     let disposed = false
     let pending: Promise<void> | undefined
@@ -76,7 +80,6 @@ export default Plugin.define({
     context.ui.slot({
       prepend: "home.footer",
       render: () => {
-        const dimensions = useTerminalDimensions()
         // The built-in footer has one top padding row at height >= 16 and is
         // hidden below width 44. Consume only that spacer using our own margin.
         const spacing = () => dimensions().height >= 16 && dimensions().width >= 44 ? -1 : 0
@@ -111,6 +114,7 @@ export default Plugin.define({
       disposed = true
       clearInterval(timer)
       clearTimeout(turnTimer)
+      context.renderer.off("resize", resize)
       stopTurn()
     }
   },

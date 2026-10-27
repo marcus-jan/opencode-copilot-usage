@@ -2,7 +2,7 @@
 import { expect, spyOn, test } from "bun:test"
 import type { Plugin } from "@opencode/plugin/tui"
 import { RGBA } from "@opentui/core"
-import { testRender, useTerminalDimensions } from "@opentui/solid"
+import { RendererContext, testRender, useRenderer, useTerminalDimensions } from "@opentui/solid"
 import { createRoot, createSignal, Show } from "solid-js"
 import plugin from "../src/tui"
 import { parseUsage, unavailable } from "../src/usage"
@@ -45,8 +45,7 @@ async function harness(options: unknown = {}, value = quota, width = 100, height
       dialog: { alert: async (input: { message: string }) => { message = input.message } },
     },
   } as unknown as Context
-  const cleanup = createRoot((dispose) => { disposeRoot = dispose; return plugin.setup(context) })
-  if (typeof cleanup !== "function") throw new Error("Expected synchronous cleanup")
+  let cleanup!: () => void
   // Match the built-in footer's responsive padding and visibility.
   const HostFooter = () => {
     const dimensions = useTerminalDimensions()
@@ -56,16 +55,24 @@ async function harness(options: unknown = {}, value = quota, width = 100, height
       </box>
     </Show>
   }
-  const view = await testRender(() => <box flexDirection="column">
+  const view = await testRender(() => {
+    Object.assign(context, { renderer: useRenderer() })
+    const result = createRoot((dispose) => { disposeRoot = dispose; return plugin.setup(context) })
+    if (typeof result !== "function") throw new Error("Expected synchronous cleanup")
+    cleanup = result
+    return <box flexDirection="column">
     <text>branch: main</text>
-    {claims[1]!.render({} as never)}
+    <RendererContext.Provider value={undefined as never}>
+      {claims[1]!.render({} as never)}
+    </RendererContext.Provider>
     <HostFooter />
     {claims[0]!.render({} as never)}
     <text>after</text>
-  </box>, { width, height })
+  </box>
+  }, { width, height })
   await view.renderOnce()
   return {
-    view, palette, setLight, setProvider,
+    view, palette, setLight, setProvider, renderer: context.renderer,
     get calls() { return calls }, get stops() { return stops }, get message() { return message },
     command: () => command,
     event: (sessionID: string) => event({ data: { sessionID } }),
@@ -181,7 +188,7 @@ test("missing optional fields leave no gaps; errors remain visible without a sel
   finally { await failed.dispose() }
 })
 
-test("home quota sits directly above the bottom status line across terminal resizing", async () => {
+test("home footer works without ambient renderer context and stays adjacent on resize", async () => {
   const h = await harness({ display: { sidebar: { enabled: false }, home: { lines: ["usage", "reset"] } } })
   try {
     const check = () => {
@@ -206,6 +213,17 @@ test("home quota sits directly above the bottom status line across terminal resi
     const rows = h.view.captureCharFrame().split("\n").map((row) => row.trim()).filter(Boolean)
     expect(rows).toEqual(["branch: main", "Copilot: 900 / 1,000", "premium requests · 90.0%", "used", "Resets: 2026-11-01", "after"])
   } finally { await h.dispose() }
+})
+
+test("unloading removes the plugin resize listener", async () => {
+  const h = await harness()
+  const before = h.renderer.listenerCount("resize")
+  const off = spyOn(h.renderer, "off")
+  try {
+    await h.dispose()
+    expect(off.mock.calls.some(([event]) => event === "resize")).toBe(true)
+    expect(h.renderer.listenerCount("resize")).toBeLessThan(before)
+  } finally { off.mockRestore() }
 })
 
 test("hidden surfaces gate automatic refresh, retain manual details, and clean up timers", async () => {
