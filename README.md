@@ -42,6 +42,9 @@ alongside the existing session information.
 
 Built and typechecked against OpenCode **2.1.4**. Uses the supported V2 server,
 custom RPC, and TUI plugin APIs; it does not support OpenCode V1.
+Release **0.2.2** is also startup-tested with OpenCode **2.2.0**. Its precompiled
+TUI uses the host's Solid/OpenTUI runtime so initial model hydration triggers a
+usage fetch without waiting for a model turn or the polling interval.
 
 OpenCode currently has no supported vertical slot directly below the branch
 inside the prompt footer. All `prompt.footer` contributions share a horizontal
@@ -50,7 +53,7 @@ than replacing existing information or mutating OpenCode's internal layout.
 
 ## Install from GitHub
 
-Version **0.2.1** is available directly from this public GitHub repository; no
+Version **0.2.2** is available directly from this public GitHub repository; no
 npm publication or manual clone is required. Merge this entry into your existing
 `plugins` array in `~/.config/opencode/opencode.json(c)` (or the project
 configuration for project-only scope):
@@ -59,7 +62,7 @@ configuration for project-only scope):
 {
   "$schema": "https://opencode.ai/config.json",
   "plugins": [
-    "github:marcus-jan/opencode-copilot-usage#v0.2.1",
+    "github:marcus-jan/opencode-copilot-usage#v0.2.2",
   ],
 }
 ```
@@ -70,7 +73,7 @@ entry for this plugin rather than adding a second copy. **Do not add a duplicate
 entry to `cli.json`.** GitHub installation requires no GitHub sign-in; accessing
 your quota still requires the normal Copilot connection in OpenCode.
 
-The `v0.2.1` tag selects this release. To upgrade later, change it to a newer
+The `v0.2.2` tag selects this release. To upgrade later, change it to a newer
 release tag. For a strict immutable pin, use a full Git commit hash instead.
 You can also use `#latest` to follow the latest release; run
 `opencode plugin update 'github:marcus-jan/opencode-copilot-usage#latest'`
@@ -85,8 +88,8 @@ No credentials or account state are written by this plugin.
 
 ### Local development installation
 
-Clone this repository and run `bun install --frozen-lockfile` inside it. Use the
-checkout's absolute directory path instead of the GitHub target:
+Clone this repository, run `bun install --frozen-lockfile`, then `bun run build`
+inside it. Use the checkout's absolute directory path instead of the GitHub target:
 
 ```jsonc
 {
@@ -95,10 +98,10 @@ checkout's absolute directory path instead of the GitHub target:
 }
 ```
 
-Configure the **directory**, not an individual source file. Root `index.ts` and
-`tui.tsx` entrypoints support local loading; package exports provide the same
-entrypoints for GitHub installation. With a remote OpenCode server, a local
-directory must be available to the server and resolvable by the CLI.
+Configure the **directory**, not an individual source file. Package exports load
+the server source and the precompiled `dist/tui.js` for both local and GitHub
+installation. Rebuild after changing TUI source. With a remote OpenCode server,
+a local directory must be available to the server and resolvable by the CLI.
 
 ### Display, colors, and refresh options
 
@@ -109,7 +112,7 @@ All options are optional. This example shows the defaults:
   "$schema": "https://opencode.ai/config.json",
   "plugins": [
     {
-      "package": "github:marcus-jan/opencode-copilot-usage#v0.2.1",
+      "package": "github:marcus-jan/opencode-copilot-usage#v0.2.2",
       "options": {
         "refreshSeconds": 60,
         "colors": { "mode": "theme", "warningAt": 75, "criticalAt": 90 },
@@ -200,7 +203,8 @@ are disabled/empty. `/copilot-usage` can still fetch manually when both are hidd
 
 ## Development
 
-Use Bun **1.3.14 or newer** (OpenTUI's minimum). If using Node-based tooling,
+Use Bun **1.4.1 or newer** for the lockfile and build tools (the plugin runtime
+requires Bun 1.3.14 or newer). If using Node-based tooling,
 OpenTUI requires Node **26.4 or newer**.
 
 ```sh
@@ -214,6 +218,10 @@ account cache isolation, option normalization, ordered/hidden lines, fallback
 statuses, thresholds, refresh gating, cleanup, and real headless OpenTUI renders.
 Rendering tests switch providers, preserve host rows, exercise narrow widths,
 and assert actual foreground colors across a live dark/light theme change.
+An isolated installed-package test starts setup without a Solid owner or selected
+model, then hydrates the host model and checks immediate usage rendering and
+effect disposal. `bun run check` rebuilds the committed `dist/tui.js`; include
+that artifact in releases so GitHub installs do not need a build step.
 
 Tests use synthetic credentials and mocked GitHub responses. No live Copilot
 request or live OpenCode configuration change is made by the test suite.

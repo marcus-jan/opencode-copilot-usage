@@ -1,6 +1,6 @@
 {
   "name": "opencode-copilot-usage-sidebar",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Copilot account usage in the OpenCode sidebar and a separate home footer line",
   "type": "module",
   "license": "MIT",
@@ -13,14 +13,15 @@
   "keywords": ["opencode", "opencode-plugin", "github-copilot", "usage", "tui"],
   "exports": {
     ".": "./index.ts",
-    "./tui": "./tui.tsx",
+    "./tui": "./dist/tui.js",
     "./rpc": "./rpc.ts"
   },
-  "files": ["index.ts", "tui.tsx", "rpc.ts", "src", "docs/screenshots", "LICENSE", "NOTICE", "README.md"],
+  "files": ["index.ts", "tui.tsx", "rpc.ts", "src", "dist", "docs/screenshots", "LICENSE", "NOTICE", "README.md"],
   "scripts": {
+    "build": "bun run scripts/build.ts",
     "typecheck": "tsc --noEmit",
     "test": "bun test --preload @opentui/solid/preload test",
-    "check": "bun run --bun typecheck && bun run test"
+    "check": "bun run build && bun run --bun typecheck && bun run test"
   },
   "engines": { "bun": ">=1.3.14", "node": ">=26.4.0" },
   "dependencies": { "@opencode/plugin": "2.1.4" },

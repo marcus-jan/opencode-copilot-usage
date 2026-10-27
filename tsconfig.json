@@ -11,5 +11,5 @@
     "allowImportingTsExtensions": true,
     "types": ["node", "bun"]
   },
-  "include": ["index.ts", "tui.tsx", "rpc.ts", "src", "test"]
+  "include": ["index.ts", "tui.tsx", "rpc.ts", "src", "test", "scripts"]
 }

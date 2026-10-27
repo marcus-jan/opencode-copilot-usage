@@ -1,6 +1,6 @@
 /** @jsxImportSource @opentui/solid */
 import { Plugin } from "@opencode/plugin/tui"
-import { createEffect, createSignal, For, Show } from "solid-js"
+import { createEffect, createRoot, createSignal, For, Show } from "solid-js"
 import { CopilotUsage } from "./rpc"
 import { enabled, normalizeOptions } from "./options"
 import { displayLines, type Line, type Role } from "./presentation"
@@ -34,12 +34,15 @@ export default Plugin.define({
       return pending
     }
 
-    // This computation is owned by plugin setup and disposed by OpenCode on unload.
+    // setup has no Solid owner. Own this effect explicitly and dispose on unload.
     // Refresh immediately when switching to Copilot, not just at the next poll.
-    createEffect(() => {
-      const providerID = context.ui.model.current()?.providerID
-      if (isCopilot(providerID) && automatic()) void refresh()
-      else setUsage(undefined)
+    const stopModel = createRoot((dispose) => {
+      createEffect(() => {
+        const providerID = context.ui.model.current()?.providerID
+        if (isCopilot(providerID) && automatic()) void refresh()
+        else setUsage(undefined)
+      })
+      return dispose
     })
     const timer = setInterval(() => { if (automatic()) void refresh() }, options.refreshSeconds * 1000)
     const stopTurn = context.data.on("session.execution.succeeded", (event) => {
@@ -112,6 +115,7 @@ export default Plugin.define({
 
     return () => {
       disposed = true
+      stopModel()
       clearInterval(timer)
       clearTimeout(turnTimer)
       context.renderer.off("resize", resize)
