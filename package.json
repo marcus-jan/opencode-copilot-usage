@@ -1,6 +1,6 @@
 {
   "name": "opencode-copilot-usage-sidebar",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Copilot account usage in the OpenCode sidebar and a separate home footer line",
   "type": "module",
   "license": "MIT",
@@ -9,7 +9,7 @@
     "./tui": "./tui.tsx",
     "./rpc": "./rpc.ts"
   },
-  "files": ["index.ts", "tui.tsx", "rpc.ts", "src", "LICENSE", "NOTICE", "README.md", "ROADMAP.md"],
+  "files": ["index.ts", "tui.tsx", "rpc.ts", "src", "docs/screenshots", "LICENSE", "NOTICE", "README.md", "ROADMAP.md"],
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "bun test --preload @opentui/solid/preload test",

@@ -1,7 +1,8 @@
 # Theme-aware colors and configurable display lines
 
-Status: **planned, not implemented**. This document proposes the next iteration;
-the current release only supports `refreshSeconds` as a plugin option.
+Status: **implemented in 0.2.0; automated checks complete**. Interactive OpenCode
+theme/config-reload smoke testing remains pending. No new options have been
+added to the live user configuration.
 
 ## Goals and existing behavior
 
@@ -16,9 +17,9 @@ the current release only supports `refreshSeconds` as a plugin option.
 - Make colors and line selection consistent across the sidebar and home footer.
 - Keep account credentials server-side and all usage data in memory.
 
-## Proposed configuration
+## Supported configuration
 
-This example is a **design proposal**, not configuration supported today:
+This example shows the supported defaults:
 
 ```jsonc
 {
@@ -130,21 +131,23 @@ Rules:
 
 ## Acceptance criteria
 
-- [ ] Existing config produces the same default text, line order, provider-only
+- [x] Existing config produces the same default text, line order, provider-only
   visibility, additive placement, and 60-second polling.
-- [ ] Threshold boundary tests cover below/at 75% and 90%, custom thresholds,
+- [x] Threshold boundary tests cover below/at 75% and 90%, custom thresholds,
   invalid values, unknown quota, unlimited quota, exhaustion, and HTTP failures.
-- [ ] Options tests cover partial nested overrides, invalid types, unknown IDs,
+- [x] Options tests cover partial nested overrides, invalid types, unknown IDs,
   duplicate IDs, empty arrays, and independent surface toggles.
-- [ ] Headless tests assert the resolved foregrounds with contrasting light/dark
+- [x] Headless tests assert the resolved foregrounds with contrasting light/dark
   token sets and a live theme change, not just text snapshots.
-- [ ] Headless tests cover reordered/hidden/optional lines on both surfaces,
+- [x] Headless tests cover reordered/hidden/optional lines on both surfaces,
   fallback status, missing data, narrow widths, and no empty layout gaps.
-- [ ] Existing branch/status/health rows remain present and are never replaced.
-- [ ] Both hidden surfaces stop automatic polling; manual details still work;
+- [x] Existing branch/status/health rows remain present and are never replaced.
+- [x] Both hidden surfaces stop automatic polling; manual details still work;
   non-Copilot providers issue no quota requests.
-- [ ] Unload/reload clears timers/listeners and does not duplicate contributions.
-- [ ] Local-directory entrypoint resolution, typecheck, and all tests pass.
+- [x] Unload/reload clears timers/listeners and does not duplicate contributions
+  in the simulated plugin lifecycle (actual host-owned slot disposal is OpenCode's
+  responsibility).
+- [x] Local-directory entrypoint resolution, typecheck, and all tests pass.
 - [ ] Manual smoke check confirms theme/config reload in OpenCode 2.1.4 before
   enabling any new option in the live user configuration.
 

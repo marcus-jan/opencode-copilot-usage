@@ -115,7 +115,7 @@ export async function fetchUsage(
   }
 }
 
-const count = (value: number | undefined) => value === undefined
+export const count = (value: number | undefined) => value === undefined
   ? "?"
   : value.toLocaleString("en-US", { maximumFractionDigits: 2 })
 
@@ -130,11 +130,12 @@ export function summary(usage: Usage | undefined): string {
   return `Copilot: ${count(quota.used)} / ${count(quota.entitlement)} ${unit}${percent}`
 }
 
-export function severity(usage: Usage | undefined): "normal" | "warning" | "error" {
+export function severity(usage: Usage | undefined, warningAt = 75, criticalAt = 90): "normal" | "warning" | "error" {
   if (usage?.error) return "warning"
   if (usage?.quota?.unlimited) return "normal"
-  const used = usage?.quota?.percentUsed ?? 0
-  return used >= 90 ? "error" : used >= 75 ? "warning" : "normal"
+  const used = usage?.quota?.percentUsed
+  if (used === undefined) return "normal"
+  return used >= criticalAt ? "error" : used >= warningAt ? "warning" : "normal"
 }
 
 export function details(usage: Usage | undefined): string[] {
@@ -145,7 +146,7 @@ export function details(usage: Usage | undefined): string[] {
     ...(usage.login ? [`Account: ${usage.login}`] : []),
     ...(usage.plan ? [`Plan: ${usage.plan}`] : []),
     ...(quota && !quota.unlimited ? [`Remaining: ${count(quota.remaining)}`] : []),
-    ...(quota?.overage ? [`Overage: ${count(quota.overage)}`] : []),
+    ...(quota?.overage && !quota.unlimited ? [`Overage: ${count(quota.overage)}`] : []),
     ...(usage.resetDate ? [`Resets: ${usage.resetDate}`] : []),
     `Updated: ${new Date(usage.fetchedAt).toLocaleTimeString()}`,
   ]

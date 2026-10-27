@@ -6,7 +6,8 @@ only while the selected model belongs to `github-copilot` or
 
 - **Sessions:** adds a Copilot usage section to the existing sidebar.
 - **New-session screen:** adds its own footer line above the bottom health/version
-  row. The existing branch, prompt status, MCP status, and version are untouched.
+  row, with no blank separator. The existing branch, prompt status, MCP status,
+  and version are untouched.
 - **Details:** `/copilot-usage` or **Show Copilot account usage** in the command
   palette refreshes usage and opens account, plan, remaining quota, reset date,
   and update-time details when GitHub supplies them.
@@ -21,6 +22,21 @@ The label is **credits** only when GitHub reports token-based billing. Legacy
 plans show **premium requests** instead. This is account-wide usage, not a
 per-session cost estimate. Unknown values stay unknown; they are not reported as
 zero. Unlimited plans are displayed as unlimited.
+
+## Screenshots
+
+### New-session footer
+
+Copilot account usage sits directly above the existing bottom status line.
+
+![OpenCode new-session screen with Copilot credits used and percentage directly above the MCP status line](docs/screenshots/new-session-footer.png)
+
+### Session sidebar
+
+The Copilot usage section shows credits used, remaining quota, and the reset date
+alongside the existing session information.
+
+![OpenCode session sidebar showing Copilot credits used, remaining quota, and reset date beneath the existing context and MCP sections](docs/screenshots/session-sidebar.png)
 
 ## Compatibility and placement
 
@@ -64,9 +80,9 @@ to GitHub Copilot through OpenCode's normal provider connection flow if needed.
 To remove it, remove only this plugin entry and save the config (or `/reload`).
 No credentials or account state are written by this plugin.
 
-### Optional refresh interval
+### Display, colors, and refresh options
 
-The default is 60 seconds, with a minimum of 30 seconds:
+All options are optional. This example shows the defaults:
 
 ```jsonc
 {
@@ -74,16 +90,72 @@ The default is 60 seconds, with a minimum of 30 seconds:
   "plugins": [
     {
       "package": "/absolute/path/opencode-copilot-usage",
-      "options": { "refreshSeconds": 120 },
+      "options": {
+        "refreshSeconds": 60,
+        "colors": { "mode": "theme", "warningAt": 75, "criticalAt": 90 },
+        "display": {
+          "sidebar": { "enabled": true, "lines": ["title", "usage", "remaining", "reset"] },
+          "home": { "enabled": true, "lines": ["usage"] },
+        },
+      },
     },
   ],
 }
 ```
 
+#### Choose lines independently
+
+Both surfaces accept these IDs in the order you want them shown:
+
+| ID | Content |
+| --- | --- |
+| `title` | Copilot usage heading |
+| `usage` | Used / entitlement, unit, percentage, or unlimited/status text |
+| `remaining` | Remaining quota (`?` if unknown) |
+| `reset` | Reset date |
+| `account` | Account login (opt-in) |
+| `plan` | Plan name (opt-in) |
+| `overage` | Overage, only when positive |
+| `updated` | Last fetch time in local time |
+
+For example, `"home": { "lines": ["usage", "reset"] }` adds two separate home
+rows, while `"sidebar": { "lines": ["title", "account", "usage"] }` shows account
+information only in the sidebar. Nested defaults merge independently.
+
+Use `"enabled": false` to hide a surface but keep its line choices, or `"lines": []`
+to hide it entirely. Missing optional fields do not leave blank rows. Unlimited
+quotas omit remaining/overage lines. Enabled, nonempty surfaces always show a
+loading, unavailable-quota, or error status even when `usage` is not selected.
+The details command is independent of these filters and still shows all available
+account information.
+
+Unknown IDs are ignored, duplicates are removed in order, and invalid non-array
+line lists fall back to defaults. Boolean flags must be actual booleans. Unknown
+options are ignored.
+
+#### Follow the current theme
+
+- `theme` (default): muted labels, base-color values/headings, and semantic
+  warning/error colors on usage at 75%/90% used. Retrieval errors use warning
+  color and explicit error text. Live theme changes update the colors immediately.
+- `muted`: all plugin text uses the current theme's muted foreground.
+- `inherit`: no plugin foreground overrides; use the host's default foreground.
+
+Customize thresholds with `warningAt` and `criticalAt`. They must be finite
+numbers satisfying `0 <= warningAt < criticalAt <= 100`; an invalid pair resets
+both to 75/90. Omitted thresholds retain their own defaults. Invalid color modes
+fall back to `theme`. Unlimited and unknown percentages never trigger quota
+severity. No hardcoded palette or custom background is used.
+
+#### Refresh behavior
+
+The interval defaults to 60 seconds, with a minimum of 30 seconds; for example,
+set `"refreshSeconds": 120` to poll every two minutes. Invalid values use 60.
 It also refreshes shortly after a successful turn in the current session.
 Normal requests share a 30-second in-memory, account-scoped cache; manual and
 post-turn refreshes bypass it. Concurrent requests are deduplicated. Polling does
-not fetch usage while a non-Copilot provider is selected.
+not fetch usage while a non-Copilot provider is selected, or when both surfaces
+are disabled/empty. `/copilot-usage` can still fetch manually when both are hidden.
 
 ## Privacy and limitations
 
@@ -118,17 +190,19 @@ bun run check
 
 The checks cover quota parsing, billing labels, missing and unlimited quotas,
 provider matching, endpoint validation, credential handling, error sanitization,
-account cache isolation, cleanup, and a real headless OpenTUI render that
-switches providers and checks the separate footer line.
+account cache isolation, option normalization, ordered/hidden lines, fallback
+statuses, thresholds, refresh gating, cleanup, and real headless OpenTUI renders.
+Rendering tests switch providers, preserve host rows, exercise narrow widths,
+and assert actual foreground colors across a live dark/light theme change.
 
 Tests use synthetic credentials and mocked GitHub responses. No live Copilot
 request or live OpenCode configuration change is made by the test suite.
 
-## Planned improvements
+## Implementation plan
 
-See [ROADMAP.md](ROADMAP.md) for the plan to expand semantic, theme-aware colors
-and let each surface choose which lines to show and in what order. Those options
-are **not implemented yet**; the current configurable option is `refreshSeconds`.
+See [ROADMAP.md](ROADMAP.md) for the implemented theme/display design and its
+verification checklist. Interactive smoke testing inside OpenCode remains a
+separate check from the automated headless tests.
 
 ## References and attribution
 
