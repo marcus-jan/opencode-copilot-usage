@@ -48,30 +48,30 @@ inside the prompt footer. All `prompt.footer` contributions share a horizontal
 row. This plugin deliberately uses a separate `home.footer` contribution rather
 than replacing existing information or mutating OpenCode's internal layout.
 
-## Enable locally
+## Install from GitHub
 
-Clone or download this repository, then run `bun install --frozen-lockfile`
-inside it. To enable it, merge this entry into your
-existing `plugins` array in `~/.config/opencode/opencode.json(c)` (or the project
-configuration if you want project-only scope):
+Version **0.2.0** is available directly from this public GitHub repository; no
+npm publication or manual clone is required. Merge this entry into your existing
+`plugins` array in `~/.config/opencode/opencode.json(c)` (or the project
+configuration for project-only scope):
 
 ```jsonc
 {
   "$schema": "https://opencode.ai/config.json",
   "plugins": [
-    "/absolute/path/opencode-copilot-usage",
+    "github:marcus-jan/opencode-copilot-usage#v0.2.0",
   ],
 }
 ```
 
-Replace the example path with your checkout's absolute path. Preserve all
-existing settings and plugin entries. Configure the **directory**,
-not an individual source file: its root `index.ts` and `tui.tsx` entrypoints
-support local-directory loading; package exports provide the same entrypoints
-when published. OpenCode loads the TUI contribution from
-the server plugin entry automatically. **Do not add a duplicate entry to
-`cli.json`.** With a remote OpenCode server, the directory must be available to
-the server and the CLI must be able to resolve the TUI package.
+OpenCode installs the package and loads both its server and TUI entrypoints.
+Preserve all existing settings and plugin entries, but replace any local-checkout
+entry for this plugin rather than adding a second copy. **Do not add a duplicate
+entry to `cli.json`.** GitHub installation requires no GitHub sign-in; accessing
+your quota still requires the normal Copilot connection in OpenCode.
+
+The `v0.2.0` tag selects this release. To upgrade later, change it to a newer
+release tag. For a strict immutable pin, use a full Git commit hash instead.
 
 Configuration changes are watched. Use `/reload` if you need to force a reload;
 no service restart is needed. Select a Copilot model to see the quota. Sign in
@@ -79,6 +79,23 @@ to GitHub Copilot through OpenCode's normal provider connection flow if needed.
 
 To remove it, remove only this plugin entry and save the config (or `/reload`).
 No credentials or account state are written by this plugin.
+
+### Local development installation
+
+Clone this repository and run `bun install --frozen-lockfile` inside it. Use the
+checkout's absolute directory path instead of the GitHub target:
+
+```jsonc
+{
+  "$schema": "https://opencode.ai/config.json",
+  "plugins": ["/absolute/path/opencode-copilot-usage"],
+}
+```
+
+Configure the **directory**, not an individual source file. Root `index.ts` and
+`tui.tsx` entrypoints support local loading; package exports provide the same
+entrypoints for GitHub installation. With a remote OpenCode server, a local
+directory must be available to the server and resolvable by the CLI.
 
 ### Display, colors, and refresh options
 
@@ -89,7 +106,7 @@ All options are optional. This example shows the defaults:
   "$schema": "https://opencode.ai/config.json",
   "plugins": [
     {
-      "package": "/absolute/path/opencode-copilot-usage",
+      "package": "github:marcus-jan/opencode-copilot-usage#v0.2.0",
       "options": {
         "refreshSeconds": 60,
         "colors": { "mode": "theme", "warningAt": 75, "criticalAt": 90 },

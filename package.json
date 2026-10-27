@@ -4,6 +4,13 @@
   "description": "Copilot account usage in the OpenCode sidebar and a separate home footer line",
   "type": "module",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/marcus-jan/opencode-copilot-usage.git"
+  },
+  "homepage": "https://github.com/marcus-jan/opencode-copilot-usage#readme",
+  "bugs": { "url": "https://github.com/marcus-jan/opencode-copilot-usage/issues" },
+  "keywords": ["opencode", "opencode-plugin", "github-copilot", "usage", "tui"],
   "exports": {
     ".": "./index.ts",
     "./tui": "./tui.tsx",
