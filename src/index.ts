@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto"
 import { Plugin } from "@opencode/plugin"
 import { createUsageCache } from "./cache"
+import { normalizeOptions } from "./options"
 import { CopilotUsage } from "./rpc"
 import { fetchUsage, unavailable } from "./usage"
 
@@ -9,7 +10,11 @@ export default Plugin.define({
   async setup(context) {
     const cache = createUsageCache()
     const controller = new AbortController()
+    // OpenCode does not pass opencode.json options to auto-loaded TUI entrypoints,
+    // so the TUI reads the normalized server-side options over RPC.
+    const options = normalizeOptions(context.options)
     await context.rpc.register(CopilotUsage, {
+      options: async () => options,
       get: async (input) => {
         try {
           const connection = await context.integration.connection.active("github-copilot")

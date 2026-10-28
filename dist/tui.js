@@ -28,6 +28,15 @@ var CopilotUsage = Rpc.define({
       output: {
         type: "object"
       }
+    },
+    options: {
+      input: {
+        type: "object",
+        additionalProperties: false
+      },
+      output: {
+        type: "object"
+      }
     }
   }
 });
@@ -63,7 +72,7 @@ function normalizeOptions(value) {
     }
   };
 }
-var enabled = (surface) => surface.enabled && surface.lines.length > 0;
+var enabled = (surface2) => surface2.enabled && surface2.lines.length > 0;
 
 // src/usage.ts
 var PROVIDER_IDS = ["github-copilot", "github-copilot-enterprise"];
@@ -112,8 +121,8 @@ function details(usage) {
 }
 
 // src/presentation.ts
-function displayLines(usage, surface, home = false) {
-  if (!enabled(surface))
+function displayLines(usage, surface2, home = false) {
+  if (!enabled(surface2))
     return [];
   const quota = usage?.quota;
   const status = !usage || usage.error || !quota;
@@ -159,8 +168,8 @@ function displayLines(usage, surface, home = false) {
       }]
     } : undefined;
   };
-  const lines = surface.lines.map(line).filter((value) => value !== undefined);
-  if (status && !surface.lines.includes("usage"))
+  const lines = surface2.lines.map(line).filter((value) => value !== undefined);
+  if (status && !surface2.lines.includes("usage"))
     lines.push(line("usage"));
   return lines;
 }
@@ -172,7 +181,10 @@ var tui_default = Plugin.define({
     const rpc = context.client.rpc(CopilotUsage);
     const [usage, setUsage] = createSignal();
     const active = () => isCopilot(context.ui.model.current()?.providerID);
-    const options = normalizeOptions(context.options);
+    const local = Object.keys(context.options ?? {}).length > 0;
+    const [options, setOptions] = createSignal(normalizeOptions(context.options), {
+      equals: (a, b) => JSON.stringify(a) === JSON.stringify(b)
+    });
     const [dimensions, setDimensions] = createSignal({
       width: context.renderer.width,
       height: context.renderer.height
@@ -182,10 +194,18 @@ var tui_default = Plugin.define({
       height
     });
     context.renderer.on("resize", resize);
-    const automatic = () => active() && (enabled(options.display.sidebar) || enabled(options.display.home));
+    const automatic = () => active() && (enabled(options().display.sidebar) || enabled(options().display.home));
     let disposed = false;
     let pending;
     let turnTimer;
+    function loadOptions() {
+      if (local)
+        return Promise.resolve();
+      return Promise.resolve().then(() => rpc.options({})).then((result) => {
+        if (!disposed)
+          setOptions(normalizeOptions(result));
+      }).catch(() => {});
+    }
     function refresh(force = false) {
       if (disposed || !active())
         return Promise.resolve();
@@ -214,10 +234,26 @@ var tui_default = Plugin.define({
       });
       return dispose;
     });
-    const timer = setInterval(() => {
-      if (automatic())
-        refresh();
-    }, options.refreshSeconds * 1000);
+    let timer;
+    const stopTimer = createRoot((dispose) => {
+      createEffect(() => {
+        const seconds = options().refreshSeconds;
+        clearInterval(timer);
+        timer = setInterval(() => {
+          if (local) {
+            if (automatic())
+              refresh();
+            return;
+          }
+          loadOptions().then(() => {
+            if (automatic())
+              refresh();
+          });
+        }, seconds * 1000);
+      });
+      return dispose;
+    });
+    loadOptions();
     const stopTurn = context.data.on("session.execution.succeeded", (event) => {
       const route = context.ui.router.current();
       if (!automatic() || route.type !== "session" || event.data.sessionID !== route.sessionID)
@@ -229,11 +265,11 @@ var tui_default = Plugin.define({
       }, 3000);
     });
     const color = (role) => {
-      if (options.colors.mode === "inherit")
+      if (options().colors.mode === "inherit")
         return;
-      if (options.colors.mode === "muted" || role === "label")
+      if (options().colors.mode === "muted" || role === "label")
         return context.theme.text.muted;
-      const level = severity(usage(), options.colors.warningAt, options.colors.criticalAt);
+      const level = severity(usage(), options().colors.warningAt, options().colors.criticalAt);
       return role === "quota" && level !== "normal" ? context.theme.text.feedback[level].base : context.theme.text.base;
     };
     const Lines = (props) => _$createComponent(For, {
@@ -270,8 +306,8 @@ var tui_default = Plugin.define({
         return _el$;
       })()
     });
-    const sidebarLines = () => displayLines(usage(), options.display.sidebar);
-    const homeLines = () => displayLines(usage(), options.display.home, true);
+    const sidebarLines = () => displayLines(usage(), options().display.sidebar);
+    const homeLines = () => displayLines(usage(), options().display.home, true);
     context.ui.slot({
       append: "sidebar.content",
       render: () => _$createComponent(Show, {
@@ -343,6 +379,7 @@ var tui_default = Plugin.define({
     return () => {
       disposed = true;
       stopModel();
+      stopTimer();
       clearInterval(timer);
       clearTimeout(turnTimer);
       context.renderer.off("resize", resize);

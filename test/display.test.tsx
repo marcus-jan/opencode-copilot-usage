@@ -12,7 +12,7 @@ type Claim = Parameters<Context["ui"]["slot"]>[0]
 const quota = parseUsage({ login: "example", copilot_plan: "pro", quota_reset_date: "2026-11-01",
   quota_snapshots: { premium_interactions: { entitlement: 1000, remaining: 100 } } })
 
-async function harness(options: unknown = {}, value = quota, width = 100, height = 25) {
+async function harness(options: unknown = {}, value = quota, width = 100, height = 25, server: unknown = {}) {
   const claims: Claim[] = []
   const [light, setLight] = createSignal(false)
   const [provider, setProvider] = createSignal("github-copilot")
@@ -27,7 +27,7 @@ async function harness(options: unknown = {}, value = quota, width = 100, height
   let disposeRoot!: () => void
   const context = {
     options,
-    client: { rpc: () => ({ get: async () => { calls++; return value } }) },
+    client: { rpc: () => ({ get: async () => { calls++; return value }, options: async () => server }) },
     data: { on: (_: string, handler: typeof event) => { event = handler; return () => { stops++ } } },
     keymap: { layer: (factory: () => { commands: typeof command[] }) => { command = factory().commands[0]! } },
     theme: { text: {
@@ -175,6 +175,22 @@ test("ordered home rows, optional sidebar lines and narrow layout preserve host 
     const rows = h.view.captureCharFrame().split("\n").map((row) => row.trim()).filter(Boolean)
     expect(rows).toEqual(["branch: main", "Plan: pro", "Account: example", "Resets: 2026-11-01", "Remaining: 100", "Account: example", "after"])
   } finally { await h.dispose() }
+})
+
+test("opencode.json options reach the auto-loaded TUI through the server", async () => {
+  const server = { display: { sidebar: { lines: ["title", "overage", "plan"] }, home: { enabled: false } } }
+  const h = await harness({}, quota, 100, 25, server)
+  try {
+    await h.view.waitForFrame((frame) => frame.includes("Plan: pro"))
+    const rows = h.view.captureCharFrame().split("\n").map((row) => row.trim()).filter(Boolean)
+    expect(rows).toEqual(["branch: main", "MCP healthy", "Copilot usage", "Plan: pro", "after"])
+  } finally { await h.dispose() }
+  const local = await harness({ display: { sidebar: { lines: ["account"] } } }, quota, 100, 25, server)
+  try {
+    await local.view.renderOnce()
+    expect(local.view.captureCharFrame()).toContain("Account: example")
+    expect(local.view.captureCharFrame()).not.toContain("Plan: pro")
+  } finally { await local.dispose() }
 })
 
 test("missing optional fields leave no gaps; errors remain visible without a selected usage line", async () => {

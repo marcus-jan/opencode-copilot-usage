@@ -1,6 +1,6 @@
 {
   "name": "opencode-copilot-usage-sidebar",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "Copilot account usage in the OpenCode sidebar and a separate home footer line",
   "type": "module",
   "license": "MIT",

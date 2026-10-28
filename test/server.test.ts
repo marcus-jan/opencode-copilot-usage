@@ -5,6 +5,7 @@ import type { Usage } from "../src/usage"
 
 test("server resolves OAuth securely, caches by account, and aborts on unload", async () => {
   let handler!: (input: { refresh?: boolean }) => Promise<Usage>
+  let options!: () => Promise<unknown>
   let credential: unknown = { type: "oauth", refresh: "test-refresh", access: "test-access" }
   let connected = true
   let lastSignal: AbortSignal | undefined
@@ -20,7 +21,11 @@ test("server resolves OAuth securely, caches by account, and aborts on unload", 
   }
   const fetchSpy = spyOn(globalThis, "fetch").mockImplementation(Object.assign(mockFetch, { preconnect: fetch.preconnect }))
   const context = {
-    rpc: { register: async (_definition: unknown, handlers: { get: typeof handler }) => { handler = handlers.get } },
+    options: { refreshSeconds: 5, display: { sidebar: { lines: ["plan", "bogus"] } } },
+    rpc: { register: async (_definition: unknown, handlers: { get: typeof handler; options: () => Promise<unknown> }) => {
+      handler = handlers.get
+      options = handlers.options
+    } },
     integration: { connection: {
       active: async (id: string) => {
         expect(id).toBe("github-copilot")
@@ -33,6 +38,7 @@ test("server resolves OAuth securely, caches by account, and aborts on unload", 
   try {
     cleanup = await plugin.setup(context)
     expect(typeof handler).toBe("function")
+    expect(await options()).toMatchObject({ refreshSeconds: 30, display: { sidebar: { lines: ["plan"] }, home: { lines: ["usage"] } } })
     expect(requests).toBe(0) // Loading the plugin alone makes no GitHub request.
     const result = await handler({})
     expect(headers[0]).toBe("token test-refresh")
